@@ -1,25 +1,32 @@
 package replayable_pubsub_channel
 
-import "errors"
+import (
+	"errors"
+	"container/list"
+)
 
 type Replayable_pubsub_channel struct
 {
-	subscribers []chan string
+	subscribers list.List
 }
 
-func (c Replayable_pubsub_channel) Init() {
-	c.subscribers = make([]chan string, 0, 10)
+func (c Replayable_pubsub_channel) lazyInit() {
+	//if c.subscribers == nil {
+	//	c.subscribers = list.New()
+	//}	
 }
 
 func (c Replayable_pubsub_channel) Publish(message string) (err error) {
-	for _,receiver := range c.subscribers {
-		receiver <- message
-	}
+	c.lazyInit()
+	for e := c.subscribers.Front(); e != nil; e.Next() {
+		e.Value.(chan string) <- message
+	}	
 	return
 }
 
 func (c Replayable_pubsub_channel) Subscribe(receiver chan string) (err error) {
-	c.subscribers = append(c.subscribers, receiver)
+	c.lazyInit()
+	c.subscribers.PushBack(receiver)
 	return
 }
 
